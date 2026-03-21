@@ -47,6 +47,7 @@ python -m venv .venv
 
 Bash
 pip install -r requirements.txt
+
 Environment Variables
 Create a .env file in the root directory:
 
@@ -54,10 +55,13 @@ Code snippet
 MONGO_URI=your_mongodb_connection_string
 SECRET_KEY=your_secret_key
 REDIS_URL=redis://localhost:6379/0
+
 Run the Application
 Bash
 python wsgi.py
+
 App will run at: http://127.0.0.1:5000
+
 
 API Testing
 Use tools like:
