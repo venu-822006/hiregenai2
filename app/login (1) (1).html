@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RESUME ANALYZER</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #07080F;
+    --bg2:       #0D0E1A;
+    --surface:   #111220;
+    --surface2:  #161829;
+    --border:    rgba(255,255,255,0.07);
+    --border-hi: rgba(255,255,255,0.12);
+    --accent:    #E8A225;
+    --accent-hi: #F5B942;
+    --accent2:   #FF4D6D;
+    --accent3:   #3DFFA0;
+    --text:      #E8E9F0;
+    --muted:     #6B6D82;
+    --dim:       #1e1f30;
+    --success:   #3DFFA0;
+    --warning:   #E8A225;
+    --error:     #FF4D6D;
+    --info:      #38bdf8;
+    --admin:     #E8A225;
+    --admin-hi:  #F5B942;
+    --glow:      rgba(232,162,37,0.15);
+  }
+
+  html, body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── NOISE OVERLAY (from HireGen) ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* ── AMBIENT BLOBS (from HireGen) ── */
+  .bg-blob { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
+  .blob-1 { width: 500px; height: 500px; background: rgba(232,162,37,0.06); top: -100px; left: -150px; }
+  .blob-2 { width: 400px; height: 400px; background: rgba(255,77,109,0.05); bottom: 0; right: -100px; }
+  .blob-3 { width: 300px; height: 300px; background: rgba(61,255,160,0.04); top: 50%; left: 40%; }
+
+  /* ── AUTH PAGE ── */
+  #auth-page {
+    position: relative; z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  /* ── CARD ── */
+  .card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.4rem 2.6rem 2.6rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(232,162,37,.06), 0 32px 64px rgba(0,0,0,.6);
+    animation: rise .6s cubic-bezier(.22,.68,0,1.2) both;
+    transition: box-shadow .3s, border-color .3s;
+  }
+  /* HireGen-style top accent line */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+    opacity: 0.6;
+    transition: opacity .3s;
+  }
+  .card.admin-mode {
+    border-color: rgba(232,162,37,.2);
+    box-shadow: 0 0 0 1px rgba(232,162,37,.12), 0 32px 64px rgba(0,0,0,.6);
+  }
+  .card.admin-mode::before { opacity: 1; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(28px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── HEADER ── */
+  .onboarding-label {
+    font-family: 'DM Mono', monospace;
+    font-size: .68rem;
+    font-weight: 500;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: .5rem;
+    transition: color .3s;
+  }
+  .admin-mode .onboarding-label { color: var(--admin-hi); }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.15;
+    margin-bottom: .4rem;
+  }
+
+  /* ── SOCIAL BUTTONS ── */
+  .social-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .7rem;
+    margin-bottom: 1.5rem;
+  }
+  .btn-social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    height: 44px;
+    border-radius: 8px;
+    border: 1px solid var(--border-hi);
+    background: var(--bg2);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: .75rem;
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color .2s, color .2s, background .2s, transform .15s;
+    text-decoration: none;
+  }
+  .btn-social:hover {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .btn-social:active { transform: translateY(0); }
+  .btn-social svg { flex-shrink: 0; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.4rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 1.4rem;
+    gap: 3px;
+  }
+  .tab {
+    flex: 1;
+    height: 34px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 2px 12px rgba(232,162,37,.3);
+  }
+  .tab.tab-admin.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    box-shadow: 0 2px 12px rgba(232,162,37,.35);
+  }
+  .tab:not(.active):hover { color: var(--text); background: rgba(255,255,255,.04); }
+
+  /* ── PANELS ── */
+  .panel { display: none; animation: fadeIn .25s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── FORM ── */
+  .field { margin-bottom: 1rem; }
+  label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: .4rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+  }
+
+  .input-wrap { position: relative; display: flex; align-items: center; }
+  .input-wrap .icon {
+    position: absolute; left: 13px;
+    color: var(--muted); pointer-events: none; transition: color .2s;
+  }
+  .input-wrap:focus-within .icon { color: var(--accent); }
+  .admin-mode .input-wrap:focus-within .icon { color: var(--admin-hi); }
+
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="text"] {
+    width: 100%;
+    height: 46px;
+    background: var(--bg2);
+    border: 1px solid var(--border-hi);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: .82rem;
+    padding: 0 14px 0 40px;
+    outline: none;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+  }
+  input:focus {
+    border-color: rgba(232,162,37,.5);
+    background: rgba(232,162,37,.04);
+    box-shadow: 0 0 0 3px rgba(232,162,37,.08);
+  }
+  .admin-mode input:focus {
+    border-color: var(--admin);
+    background: rgba(232,162,37,.05);
+    box-shadow: 0 0 0 3px rgba(232,162,37,.1);
+  }
+  input::placeholder { color: var(--muted); font-size: .8rem; }
+  input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 100px #0D0E1A inset;
+    -webkit-text-fill-color: var(--text);
+  }
+
+  .eye-toggle {
+    position: absolute; right: 12px;
+    background: none; border: none;
+    color: var(--muted); cursor: pointer; padding: 4px; display: flex;
+    transition: color .2s;
+  }
+  .eye-toggle:hover { color: var(--accent); }
+
+  /* ── FORGOT ── */
+  .forgot-row {
+    display: flex; justify-content: flex-end;
+    margin-top: -.3rem; margin-bottom: .9rem;
+  }
+  .forgot-row a {
+    font-family: 'DM Mono', monospace;
+    font-size: .68rem; color: var(--muted);
+    text-decoration: none; letter-spacing: .04em;
+    transition: color .2s;
+  }
+  .forgot-row a:hover { color: var(--accent); }
+
+  /* ── PRIMARY BUTTON ── */
+  .btn-primary {
+    width: 100%; height: 48px;
+    background: var(--accent);
+    border: none; border-radius: 8px;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: .82rem; font-weight: 800;
+    letter-spacing: .1em; text-transform: uppercase;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: background .2s, transform .15s, box-shadow .2s;
+    box-shadow: 0 4px 20px rgba(232,162,37,.25);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary:hover { background: var(--accent-hi); transform: translateY(-1px); box-shadow: 0 8px 28px rgba(232,162,37,.35); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-admin {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 4px 20px rgba(232,162,37,.2);
+    color: #000;
+  }
+  .btn-admin:hover { box-shadow: 0 8px 28px rgba(232,162,37,.35); }
+
+  /* ── ADMIN BANNER ── */
+  .admin-banner {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(232,162,37,.07);
+    border: 1px solid rgba(232,162,37,.18);
+    border-radius: 8px;
+    padding: .7rem 1rem; margin-bottom: 1.2rem;
+    animation: fadeIn .3s ease;
+  }
+  .admin-banner-icon {
+    width: 28px; height: 28px;
+    background: rgba(232,162,37,.15);
+    border-radius: 6px;
+    display: grid; place-items: center;
+    color: var(--admin-hi); flex-shrink: 0;
+  }
+  .admin-banner-text {
+    font-family: 'DM Mono', monospace;
+    font-size: .75rem; color: var(--admin-hi);
+    font-weight: 500; letter-spacing: .02em; line-height: 1.4;
+  }
+  .admin-banner-text span {
+    display: block; font-size: .68rem;
+    color: rgba(245,180,70,.5);
+    font-weight: 400; margin-top: 1px;
+  }
+
+  .access-key-wrap input { letter-spacing: .12em; }
+
+  /* ── FOOTER ── */
+  .card-footer {
+    margin-top: 1.6rem; text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem; color: var(--muted);
+    letter-spacing: .04em; line-height: 1.8;
+  }
+  .card-footer a { color: var(--muted); text-decoration: underline; transition: color .2s; }
+  .card-footer a:hover { color: var(--accent); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface);
+    border: 1px solid var(--border-hi);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: .6rem 1.2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: .75rem; letter-spacing: .04em;
+    color: var(--text); opacity: 0;
+    transition: opacity .3s, transform .3s;
+    pointer-events: none; z-index: 9998; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.success { border-left-color: var(--success); color: var(--success); }
+  #toast.error   { border-left-color: var(--error);   color: var(--error); }
+  #toast.admin   { border-left-color: var(--admin);   color: var(--admin-hi); }
+
+  /* ════════════════════════════════════
+     ADMIN PANEL
+  ════════════════════════════════════ */
+  #admin-page {
+    display: none; position: relative; z-index: 2; min-height: 100vh;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    z-index: 10;
+    animation: slideIn .4s cubic-bezier(.22,.68,0,1.2) both;
+  }
+  .sidebar::after {
+    content: '';
+    position: absolute; right: 0; top: 0; bottom: 0; width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+    opacity: 0.2;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(-30px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+  .sidebar-header {
+    padding: 1.4rem 1.4rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--admin), var(--accent2));
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 15px;
+    box-shadow: 0 3px 12px rgba(232,162,37,.3);
+    flex-shrink: 0;
+  }
+  .sidebar-brand {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: .95rem; letter-spacing: .01em;
+  }
+  .sidebar-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: .58rem;
+    background: rgba(232,162,37,.12);
+    color: var(--admin-hi);
+    border: 1px solid rgba(232,162,37,.25);
+    border-radius: 4px; padding: 1px 5px;
+    font-weight: 500; letter-spacing: .08em;
+    text-transform: uppercase; margin-left: auto;
+  }
+  .sidebar-nav {
+    flex: 1; padding: 1rem .75rem;
+    display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
+  }
+  .nav-section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: .62rem; font-weight: 500;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--muted); padding: .7rem .6rem .3rem; margin-top: .3rem;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: .6rem .75rem; border-radius: 8px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: .78rem; font-weight: 500;
+    cursor: pointer; transition: background .15s, color .15s;
+    border: none; background: none; width: 100%; text-align: left; position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.03); color: var(--text); }
+  .nav-item.active { background: var(--glow); color: var(--accent); }
+  .nav-item.active::before {
+    content: ''; position: absolute;
+    left: 0; top: 20%; bottom: 20%;
+    width: 2px; background: var(--accent);
+    border-radius: 0 2px 2px 0;
+  }
+  .nav-badge {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: .6rem; background: var(--accent2);
+    color: #fff; border-radius: 20px;
+    padding: 1px 7px; font-weight: 500;
+  }
+  .sidebar-footer {
+    padding: 1rem .75rem; border-top: 1px solid var(--border);
+  }
+  .user-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: .5rem .6rem; border-radius: 8px;
+    cursor: pointer; transition: background .15s;
+  }
+  .user-row:hover { background: rgba(255,255,255,.03); }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--admin), var(--accent2));
+    display: grid; place-items: center;
+    font-family: 'Syne', sans-serif;
+    font-size: .72rem; font-weight: 700; color: #000; flex-shrink: 0;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name {
+    font-family: 'DM Mono', monospace;
+    font-size: .78rem; font-weight: 500; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .user-role {
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem; color: var(--accent); letter-spacing: .04em;
+  }
+
+  /* Main content */
+  .main-content { margin-left: 240px; min-height: 100vh; display: flex; flex-direction: column; }
+  .topbar {
+    height: 64px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem;
+    background: rgba(7,8,15,.85);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .topbar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem; font-weight: 700; color: var(--text);
+  }
+  .topbar-actions { display: flex; align-items: center; gap: .75rem; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 1px solid var(--border-hi);
+    background: var(--surface2);
+    color: var(--muted); cursor: pointer;
+    display: grid; place-items: center;
+    transition: border-color .2s, color .2s; position: relative;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .notif-dot {
+    position: absolute; top: 7px; right: 7px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent2); border: 1.5px solid var(--surface);
+  }
+  .btn-logout {
+    height: 34px; padding: 0 .9rem; border-radius: 8px;
+    border: 1px solid var(--border-hi);
+    background: var(--surface2); color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem; font-weight: 500; letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-logout:hover { background: rgba(255,77,109,.08); border-color: var(--error); color: var(--error); }
+
+  /* Sections */
+  .section { display: none; padding: 2rem; animation: fadeIn .25s ease; }
+  .section.active { display: block; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.3rem 1.4rem;
+    position: relative; overflow: hidden;
+    transition: border-color .3s, transform .2s;
+    animation: rise .5s cubic-bezier(.22,.68,0,1.2) both;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; background: var(--line-color, var(--accent)); opacity: .5;
+  }
+  .stat-card:nth-child(2) { --line-color: var(--accent2); }
+  .stat-card:nth-child(3) { --line-color: var(--accent3); }
+  .stat-card:nth-child(4) { --line-color: #A78BFA; }
+  .stat-card:hover { border-color: rgba(232,162,37,.25); transform: translateY(-2px); }
+  .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+  .stat-icon { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; font-size: 15px; }
+  .stat-icon.purple { background: rgba(167,139,250,.12); color: #A78BFA; }
+  .stat-icon.green  { background: rgba(61,255,160,.1);   color: var(--accent3); }
+  .stat-icon.yellow { background: rgba(232,162,37,.12);  color: var(--accent); }
+  .stat-icon.blue   { background: rgba(56,189,248,.1);   color: var(--info); }
+  .stat-delta { font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500; padding: 2px 7px; border-radius: 20px; }
+  .delta-up   { background: rgba(61,255,160,.1);  color: var(--accent3); }
+  .delta-down { background: rgba(255,77,109,.1);  color: var(--error); }
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; font-weight: 900; color: var(--text); line-height: 1; margin-bottom: .2rem;
+  }
+  .stat-label { font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+  /* Content grid */
+  .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.5rem; }
+  @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+
+  .panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .panel-card-header { padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-card-title {
+    font-family: 'Syne', sans-serif; font-size: .88rem; font-weight: 700; letter-spacing: .02em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-card-title::before {
+    content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block;
+  }
+  .view-all-btn { font-family: 'DM Mono', monospace; font-size: .68rem; color: var(--accent); background: none; border: none; cursor: pointer; letter-spacing: .04em; transition: color .2s; }
+  .view-all-btn:hover { color: var(--accent-hi); }
+
+  /* Activity */
+  .activity-list { padding: .5rem 0; }
+  .activity-item { display: flex; align-items: flex-start; gap: .9rem; padding: .75rem 1.4rem; transition: background .15s; }
+  .activity-item:hover { background: rgba(255,255,255,.02); }
+  .activity-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 7px; flex-shrink: 0; }
+  .dot-purple { background: #A78BFA; }
+  .dot-green  { background: var(--accent3); }
+  .dot-yellow { background: var(--accent); }
+  .dot-blue   { background: var(--info); }
+  .activity-text { flex: 1; font-family: 'DM Mono', monospace; font-size: .75rem; line-height: 1.5; color: var(--muted); }
+  .activity-text strong { color: var(--text); font-weight: 500; }
+  .activity-time { font-size: .65rem; color: var(--muted); margin-top: 2px; opacity: .7; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th { padding: .75rem 1.2rem; text-align: left; font-family: 'DM Mono', monospace; font-size: .62rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  td { padding: .85rem 1.2rem; font-family: 'DM Mono', monospace; font-size: .78rem; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(255,255,255,.02); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-family: 'DM Mono', monospace; font-size: .62rem; font-weight: 500; padding: 3px 9px; border-radius: 4px; text-transform: uppercase; letter-spacing: .06em; }
+  .badge-success { background: rgba(61,255,160,.08);  color: var(--accent3);  border: 1px solid rgba(61,255,160,.2); }
+  .badge-warning { background: rgba(232,162,37,.08);  color: var(--accent);   border: 1px solid rgba(232,162,37,.2); }
+  .badge-error   { background: rgba(255,77,109,.08);  color: var(--error);    border: 1px solid rgba(255,77,109,.2); }
+  .badge-info    { background: rgba(56,189,248,.08);  color: var(--info);     border: 1px solid rgba(56,189,248,.2); }
+  .badge-muted   { background: rgba(107,109,130,.08); color: var(--muted);    border: 1px solid rgba(107,109,130,.2); }
+
+  .score-bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 100px; }
+  .score-bar-bg { flex: 1; height: 4px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent-hi)); }
+  .score-num { font-family: 'DM Mono', monospace; font-size: .72rem; color: var(--muted); white-space: nowrap; }
+
+  .table-actions { display: flex; gap: 6px; }
+  .tbl-btn {
+    height: 27px; padding: 0 .7rem; border-radius: 5px;
+    border: 1px solid var(--border-hi); background: var(--surface2);
+    color: var(--muted); font-family: 'DM Mono', monospace;
+    font-size: .65rem; font-weight: 500; cursor: pointer;
+    transition: all .15s; white-space: nowrap; letter-spacing: .03em;
+  }
+  .tbl-btn:hover { border-color: rgba(232,162,37,.4); color: var(--accent); background: rgba(232,162,37,.06); }
+  .tbl-btn.danger:hover { border-color: rgba(255,77,109,.4); color: var(--error); background: rgba(255,77,109,.06); }
+
+  /* Users */
+  .users-toolbar { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+  .search-input-wrap { position: relative; flex: 1; min-width: 200px; max-width: 320px; }
+  .search-input-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .search-input {
+    width: 100%; height: 38px; background: var(--surface);
+    border: 1px solid var(--border-hi); border-radius: 8px;
+    color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: .78rem; padding: 0 12px 0 36px; outline: none;
+    transition: border-color .2s, box-shadow .2s; letter-spacing: .02em;
+  }
+  .search-input:focus { border-color: rgba(232,162,37,.4); box-shadow: 0 0 0 3px rgba(232,162,37,.07); }
+  .search-input::placeholder { color: var(--muted); }
+  .filter-btn {
+    height: 38px; padding: 0 .9rem; border-radius: 8px;
+    border: 1px solid var(--border-hi); background: var(--surface);
+    color: var(--muted); font-family: 'DM Mono', monospace;
+    font-size: .72rem; cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; gap: 6px;
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .filter-btn:hover { border-color: rgba(232,162,37,.4); color: var(--accent); }
+  .btn-add {
+    height: 38px; padding: 0 1rem; border-radius: 8px; border: none;
+    background: var(--accent); color: #000;
+    font-family: 'Syne', sans-serif; font-size: .75rem; font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: all .15s; margin-left: auto;
+    box-shadow: 0 2px 12px rgba(232,162,37,.25);
+  }
+  .btn-add:hover { background: var(--accent-hi); transform: translateY(-1px); }
+
+  /* Settings */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 800px) { .settings-grid { grid-template-columns: 1fr; } }
+  .settings-group { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .settings-group-header { padding: 1rem 1.4rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+  .settings-group-title { font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 700; letter-spacing: .02em; }
+  .settings-row { padding: .85rem 1.4rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.04); gap: 1rem; }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-family: 'DM Mono', monospace; font-size: .8rem; color: var(--text); }
+  .settings-desc { font-family: 'DM Mono', monospace; font-size: .65rem; color: var(--muted); margin-top: 1px; letter-spacing: .02em; }
+  .toggle { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,.08); border-radius: 99px; cursor: pointer; transition: background .2s; border: 1px solid var(--border-hi); }
+  .toggle-slider::before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; border-radius: 50%; background: var(--muted); transition: transform .2s, background .2s; }
+  .toggle input:checked + .toggle-slider { background: rgba(232,162,37,.2); border-color: rgba(232,162,37,.4); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--accent); }
+
+  /* Page header */
+  .page-header { margin-bottom: 1.5rem; }
+  .page-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; margin-bottom: .2rem; }
+  .page-desc { font-family: 'DM Mono', monospace; font-size: .72rem; color: var(--muted); letter-spacing: .04em; }
+
+  /* Donut */
+  .donut-wrap { display: flex; align-items: center; justify-content: center; padding: 1.5rem 1.4rem; gap: 1.5rem; }
+  .donut-legend { display: flex; flex-direction: column; gap: .5rem; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: .72rem; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(232,162,37,.25); }
+</style>
+</head>
+<body>
+
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+<div class="bg-blob blob-3"></div>
+
+<!-- ════════════════ AUTH PAGE ════════════════ -->
+<div id="auth-page">
+  <div class="card" id="auth-card">
+
+    <p class="onboarding-label">RESUME ANALYZER</p>
+    <h1 id="auth-title">Welcome</h1>
+
+    <!-- Tabs: Login | Sign Up | Admin -->
+    <div class="tabs">
+      <button class="tab active" id="tab-email" onclick="switchTab('email')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
+        Login
+      </button>
+      <button class="tab" id="tab-signup" onclick="switchTab('signup')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Sign Up
+      </button>
+      <button class="tab tab-admin" id="tab-admin" onclick="switchTab('admin')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Admin
+      </button>
+    </div>
+
+    <!-- Login panel -->
+    <div class="panel active" id="panel-email">
+      <div class="social-grid">
+        <button class="btn-social" onclick="socialLogin('Google')">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#4285F4" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#34A853" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Google
+        </button>
+        <button class="btn-social" onclick="socialLogin('GitHub')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.09.66-.22.66-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0112 6.8c.85.004 1.71.114 2.51.334 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.16.58.67.48A10.01 10.01 0 0022 12c0-5.52-4.48-10-10-10z"/></svg>
+          GitHub
+        </button>
+      </div>
+      <div class="divider" style="margin-bottom:1.2rem;">or login with email</div>
+      <div class="field">
+        <label>Email address</label>
+        <div class="input-wrap">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
+          <input type="email" id="email-input" placeholder="hello@example.com" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="input-wrap">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" id="password-input" placeholder="••••••••" />
+          <button class="eye-toggle" onclick="togglePwd()" title="Toggle password">
+            <svg id="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="forgot-row"><a href="#">Forgot password?</a></div>
+      <button class="btn-primary" onclick="handleEmailLogin()">
+        Login
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Sign Up panel -->
+    <div class="panel" id="panel-signup">
+      <div class="field">
+        <label>Full name</label>
+        <div class="input-wrap">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" id="signup-name" placeholder="Enter name" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Email address</label>
+        <div class="input-wrap">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
+          <input type="email" id="signup-email" placeholder="hello@example.com" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="input-wrap">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" id="signup-password" placeholder="Min. 8 characters" />
+          <button class="eye-toggle" onclick="toggleSignupPwd()" title="Toggle password">
+            <svg id="eye-icon-signup" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn-primary" style="margin-top:.3rem" onclick="handleSignUp()">
+        Create account
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Admin panel -->
+    <div class="panel" id="panel-admin">
+      <div class="admin-banner">
+        <div class="admin-banner-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="admin-banner-text">
+          Administrator Access
+          <span>Restricted area — authorised personnel only</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Admin Email</label>
+        <div class="input-wrap">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
+          <input type="email" id="admin-email" placeholder="admin@company.com" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="input-wrap">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" id="admin-password" placeholder="••••••••" />
+          <button class="eye-toggle" onclick="toggleAdminPwd()" title="Toggle password">
+            <svg id="eye-icon-admin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Access Key</label>
+        <div class="input-wrap access-key-wrap">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          <input type="password" id="admin-key" placeholder="Enter secret access key" />
+        </div>
+      </div>
+      <div class="forgot-row" style="margin-top:-.2rem"><a href="#">Forgot access key?</a></div>
+      <button class="btn-primary btn-admin" onclick="handleAdminLogin()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Enter Admin Panel
+      </button>
+      <p style="text-align:center;font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted);margin-top:.75rem;letter-spacing:.04em;">Demo: any valid email + password ≥ 6 + any key</p>
+    </div>
+
+    <p class="card-footer">
+      By signing in you agree to our <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
+    </p>
+  </div>
+</div>
+
+<!-- ════════════════ ADMIN PANEL ════════════════ -->
+<div id="admin-page">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🛡️</div>
+      <span class="sidebar-brand">RESUME ANALYZER</span>
+      <span class="sidebar-badge">Admin</span>
+    </div>
+    <div class="sidebar-nav">
+      <span class="nav-section-label">Overview</span>
+      <button class="nav-item active" onclick="showSection('dashboard')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <span class="nav-section-label">Resume Management</span>
+      <button class="nav-item" onclick="showSection('submissions')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+        Submissions
+        <span class="nav-badge">24</span>
+      </button>
+      <button class="nav-item" onclick="showSection('analytics')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+        Analytics
+      </button>
+      <span class="nav-section-label">Administration</span>
+      <button class="nav-item" onclick="showSection('users')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Users
+      </button>
+      <button class="nav-item" onclick="showSection('settings')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="user-avatar" id="sidebar-avatar">AD</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Admin User</div>
+          <div class="user-role">Administrator</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="showToast('No new notifications','')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <span class="notif-dot"></span>
+        </button>
+        <button class="btn-logout" onclick="logout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="section active" id="section-dashboard">
+      <div class="page-header">
+        <div class="page-title">Overview</div>
+        <div class="page-desc">// welcome back — resume analysis platform status</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card" style="animation-delay:.05s">
+          <div class="stat-top"><div class="stat-icon yellow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></div><span class="stat-delta delta-up">+12%</span></div>
+          <div class="stat-value">1,284</div><div class="stat-label">Total Resumes Analyzed</div>
+        </div>
+        <div class="stat-card" style="animation-delay:.1s">
+          <div class="stat-top"><div class="stat-icon green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><span class="stat-delta delta-up">+5%</span></div>
+          <div class="stat-value">342</div><div class="stat-label">Active Users</div>
+        </div>
+        <div class="stat-card" style="animation-delay:.15s">
+          <div class="stat-top"><div class="stat-icon purple"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="stat-delta delta-up">+3%</span></div>
+          <div class="stat-value">78.4</div><div class="stat-label">Avg. Match Score</div>
+        </div>
+        <div class="stat-card" style="animation-delay:.2s">
+          <div class="stat-top"><div class="stat-icon blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg></div><span class="stat-delta delta-down">-2%</span></div>
+          <div class="stat-value">1.8s</div><div class="stat-label">Avg. Analysis Time</div>
+        </div>
+      </div>
+      <div class="content-grid">
+        <div class="panel-card">
+          <div class="panel-card-header"><div class="panel-card-title">Recent Activity</div><button class="view-all-btn" onclick="showSection('submissions')">view all →</button></div>
+          <div class="activity-list">
+            <div class="activity-item"><div class="activity-dot dot-green"></div><div class="activity-text"><strong>Sarah Chen</strong> submitted a new resume — score 91/100<div class="activity-time">2 minutes ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot dot-purple"></div><div class="activity-text"><strong>Marcus Lee</strong> re-analyzed resume for Software Engineer role<div class="activity-time">14 minutes ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot dot-yellow"></div><div class="activity-text"><strong>Priya Nair</strong> submitted resume — pending review<div class="activity-time">31 minutes ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot dot-blue"></div><div class="activity-text"><strong>James Walker</strong> account created &amp; first resume uploaded<div class="activity-time">1 hour ago</div></div></div>
+            <div class="activity-item"><div class="activity-dot dot-green"></div><div class="activity-text"><strong>Aisha Patel</strong> submitted resume — score 88/100<div class="activity-time">2 hours ago</div></div></div>
+          </div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-card-header"><div class="panel-card-title">Submissions This Week</div></div>
+          <div style="padding:1.4rem">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:6px;height:100px;margin-bottom:.8rem">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="flex:1;width:100%;border-radius:4px 4px 0 0;background:rgba(232,162,37,.25)"></div><span style="font-size:.6rem;color:var(--muted);font-family:'DM Mono',monospace">Mon</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="flex:1;width:100%;border-radius:4px 4px 0 0;background:rgba(232,162,37,.3)"></div><span style="font-size:.6rem;color:var(--muted);font-family:'DM Mono',monospace">Tue</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="flex:1;width:100%;border-radius:4px 4px 0 0;background:rgba(232,162,37,.55)"></div><span style="font-size:.6rem;color:var(--muted);font-family:'DM Mono',monospace">Wed</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="flex:1;width:100%;border-radius:4px 4px 0 0;background:rgba(232,162,37,.35)"></div><span style="font-size:.6rem;color:var(--muted);font-family:'DM Mono',monospace">Thu</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="flex:1;width:100%;border-radius:4px 4px 0 0;background:var(--accent);box-shadow:0 0 10px rgba(232,162,37,.3)"></div><span style="font-size:.6rem;color:var(--muted);font-family:'DM Mono',monospace">Fri</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="flex:1;width:100%;border-radius:4px 4px 0 0;background:rgba(232,162,37,.18)"></div><span style="font-size:.6rem;color:var(--muted);font-family:'DM Mono',monospace">Sat</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1"><div style="flex:1;width:100%;border-radius:4px 4px 0 0;background:rgba(232,162,37,.12)"></div><span style="font-size:.6rem;color:var(--muted);font-family:'DM Mono',monospace">Sun</span></div>
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted)">Total this week: <strong style="color:var(--accent)">184 submissions</strong></div>
+          </div>
+          <div style="padding:0 1.4rem 1.4rem">
+            <div style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:.9rem;letter-spacing:.02em">Score Distribution</div>
+            <div class="donut-wrap" style="padding:0">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="12"/>
+                <circle cx="40" cy="40" r="30" fill="none" stroke="#E8A225" stroke-width="12" stroke-dasharray="75.4 113.1" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 40 40)" filter="drop-shadow(0 0 5px rgba(232,162,37,.4))"/>
+                <circle cx="40" cy="40" r="30" fill="none" stroke="#3DFFA0" stroke-width="12" stroke-dasharray="37.7 150.8" stroke-dashoffset="-75.4" stroke-linecap="round" transform="rotate(-90 40 40)"/>
+                <circle cx="40" cy="40" r="30" fill="none" stroke="#FF4D6D" stroke-width="12" stroke-dasharray="25.1 163.4" stroke-dashoffset="-113.1" stroke-linecap="round" transform="rotate(-90 40 40)"/>
+              </svg>
+              <div class="donut-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>80–100 (40%)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--accent3)"></div>60–79 (20%)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div>&lt;60 (13%)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,.1)"></div>Pending (27%)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submissions -->
+    <div class="section" id="section-submissions">
+      <div class="page-header"><div class="page-title">Resume Submissions</div><div class="page-desc">// review, filter, and manage all submitted resumes</div></div>
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title">All Submissions</div>
+          <div style="display:flex;gap:.5rem">
+            <button class="filter-btn" onclick="showToast('Filter coming soon','')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"/></svg>Filter</button>
+            <button class="filter-btn" onclick="showToast('Exported to CSV','success')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Applicant</th><th>Role Applied</th><th>Score</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Sarah Chen</strong><br><span style="font-size:.68rem;color:var(--muted)">sarah@email.com</span></td><td>Senior Frontend Dev</td><td><div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:91%"></div></div><span class="score-num">91</span></div></td><td><span class="badge badge-success">✓ Approved</span></td><td style="color:var(--muted)">Mar 21</td><td><div class="table-actions"><button class="tbl-btn" onclick="showToast('Opening resume…','')">View</button><button class="tbl-btn danger" onclick="showToast('Resume removed','error')">Delete</button></div></td></tr>
+            <tr><td><strong>Marcus Lee</strong><br><span style="font-size:.68rem;color:var(--muted)">marcus@email.com</span></td><td>Backend Engineer</td><td><div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:76%"></div></div><span class="score-num">76</span></div></td><td><span class="badge badge-info">↻ Reviewing</span></td><td style="color:var(--muted)">Mar 20</td><td><div class="table-actions"><button class="tbl-btn" onclick="showToast('Opening resume…','')">View</button><button class="tbl-btn danger" onclick="showToast('Resume removed','error')">Delete</button></div></td></tr>
+            <tr><td><strong>Priya Nair</strong><br><span style="font-size:.68rem;color:var(--muted)">priya@email.com</span></td><td>Data Scientist</td><td><div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:88%"></div></div><span class="score-num">88</span></div></td><td><span class="badge badge-warning">⏳ Pending</span></td><td style="color:var(--muted)">Mar 20</td><td><div class="table-actions"><button class="tbl-btn" onclick="showToast('Opening resume…','')">View</button><button class="tbl-btn danger" onclick="showToast('Resume removed','error')">Delete</button></div></td></tr>
+            <tr><td><strong>James Walker</strong><br><span style="font-size:.68rem;color:var(--muted)">james@email.com</span></td><td>Product Manager</td><td><div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:54%"></div></div><span class="score-num">54</span></div></td><td><span class="badge badge-error">✕ Rejected</span></td><td style="color:var(--muted)">Mar 19</td><td><div class="table-actions"><button class="tbl-btn" onclick="showToast('Opening resume…','')">View</button><button class="tbl-btn danger" onclick="showToast('Resume removed','error')">Delete</button></div></td></tr>
+            <tr><td><strong>Aisha Patel</strong><br><span style="font-size:.68rem;color:var(--muted)">aisha@email.com</span></td><td>UX Designer</td><td><div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:88%"></div></div><span class="score-num">88</span></div></td><td><span class="badge badge-success">✓ Approved</span></td><td style="color:var(--muted)">Mar 19</td><td><div class="table-actions"><button class="tbl-btn" onclick="showToast('Opening resume…','')">View</button><button class="tbl-btn danger" onclick="showToast('Resume removed','error')">Delete</button></div></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics -->
+    <div class="section" id="section-analytics">
+      <div class="page-header"><div class="page-title">Analytics</div><div class="page-desc">// insights into CV performance, trends, and platform usage</div></div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-top"><div class="stat-icon yellow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span class="stat-delta delta-up">+18%</span></div><div class="stat-value">92%</div><div class="stat-label">Accuracy Rate</div></div>
+        <div class="stat-card"><div class="stat-top"><div class="stat-icon green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg></div><span class="stat-delta delta-up">+7%</span></div><div class="stat-value">1,102</div><div class="stat-label">Successful Matches</div></div>
+        <div class="stat-card"><div class="stat-top"><div class="stat-icon blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><span class="stat-delta delta-down">-4%</span></div><div class="stat-value">182</div><div class="stat-label">Flagged Resumes</div></div>
+        <div class="stat-card"><div class="stat-top"><div class="stat-icon purple"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div><span class="stat-delta delta-up">+22%</span></div><div class="stat-value">68</div><div class="stat-label">New Users (7d)</div></div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-header"><div class="panel-card-title">Top Roles Analyzed</div></div>
+        <div style="padding:1.2rem 1.4rem;display:flex;flex-direction:column;gap:.85rem">
+          <div><div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.75rem;margin-bottom:.35rem;color:var(--muted)"><span style="color:var(--text)">Software Engineer</span><span>342 Resumes</span></div><div style="height:5px;background:rgba(255,255,255,.05);border-radius:99px;overflow:hidden"><div style="width:88%;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-hi));border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.75rem;margin-bottom:.35rem;color:var(--muted)"><span style="color:var(--text)">Data Scientist</span><span>218 Resumes</span></div><div style="height:5px;background:rgba(255,255,255,.05);border-radius:99px;overflow:hidden"><div style="width:56%;height:100%;background:linear-gradient(90deg,var(--accent3),#8effc8);border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.75rem;margin-bottom:.35rem;color:var(--muted)"><span style="color:var(--text)">Product Manager</span><span>176 Resumes</span></div><div style="height:5px;background:rgba(255,255,255,.05);border-radius:99px;overflow:hidden"><div style="width:45%;height:100%;background:linear-gradient(90deg,#A78BFA,#c4b5fd);border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.75rem;margin-bottom:.35rem;color:var(--muted)"><span style="color:var(--text)">UX Designer</span><span>141 Resumes</span></div><div style="height:5px;background:rgba(255,255,255,.05);border-radius:99px;overflow:hidden"><div style="width:36%;height:100%;background:linear-gradient(90deg,var(--accent2),#ff8fa3);border-radius:99px"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div class="section" id="section-users">
+      <div class="page-header"><div class="page-title">User Management</div><div class="page-desc">// manage platform users, roles, and permissions</div></div>
+      <div class="users-toolbar">
+        <div class="search-input-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" type="text" placeholder="search users…" oninput="filterUsers(this.value)" />
+        </div>
+        <button class="filter-btn">Role</button>
+        <button class="btn-add" onclick="showToast('Invite dialog coming soon','')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Invite User
+        </button>
+      </div>
+      <div class="panel-card">
+        <div class="table-wrap">
+          <table id="users-table"><thead><tr><th>User</th><th>Role</th><th>Resumes</th><th>Last Active</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Admin User</strong><br><span style="font-size:.68rem;color:var(--muted)">admin@company.com</span></td><td><span class="badge badge-warning">Admin</span></td><td>—</td><td style="color:var(--muted)">Just now</td><td><span class="badge badge-success">Active</span></td><td><div class="table-actions"><button class="tbl-btn" onclick="showToast('Edit dialog coming soon','')">Edit</button></div></td></tr>
+            <tr><td><strong>Sarah Chen</strong><br><span style="font-size:.68rem;color:var(--muted)">sarah@email.com</span></td><td><span class="badge badge-muted">User</span></td><td>3</td><td style="color:var(--muted)">2 min ago</td><td><span class="badge badge-success">Active</span></td><td><div class="table-actions"><button class="tbl-btn" onclick="showToast('Edit dialog coming soon','')">Edit</button><button class="tbl-btn danger" onclick="showToast('User suspended','error')">Suspend</button></div></td></tr>
+            <tr><td><strong>Marcus Lee</strong><br><span style="font-size:.68rem;color:var(--muted)">marcus@email.com</span></td><td><span class="badge badge-muted">User</span></td><td>1</td><td style="color:var(--muted)">14 min ago</td><td><span class="badge badge-success">Active</span></td><td><div class="table-actions"><button class="tbl-btn" onclick="showToast('Edit dialog coming soon','')">Edit</button><button class="tbl-btn danger" onclick="showToast('User suspended','error')">Suspend</button></div></td></tr>
+            <tr><td><strong>Priya Nair</strong><br><span style="font-size:.68rem;color:var(--muted)">priya@email.com</span></td><td><span class="badge badge-muted">User</span></td><td>2</td><td style="color:var(--muted)">31 min ago</td><td><span class="badge badge-success">Active</span></td><td><div class="table-actions"><button class="tbl-btn" onclick="showToast('Edit dialog coming soon','')">Edit</button><button class="tbl-btn danger" onclick="showToast('User suspended','error')">Suspend</button></div></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="section" id="section-settings">
+      <div class="page-header"><div class="page-title">Settings</div><div class="page-desc">// configure platform behavior, notifications, and integrations</div></div>
+      <div class="settings-grid">
+        <div class="settings-group">
+          <div class="settings-group-header"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg><span class="settings-group-title">CV Analysis</span></div>
+          <div class="settings-row"><div><div class="settings-label">Auto-analyze on upload</div><div class="settings-desc">Immediately score CVs when submitted</div></div><label class="toggle"><input type="checkbox" checked onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">AI-powered suggestions</div><div class="settings-desc">Show improvement hints to applicants</div></div><label class="toggle"><input type="checkbox" checked onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Strict keyword matching</div><div class="settings-desc">Require exact skill keyword matches</div></div><label class="toggle"><input type="checkbox" onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">PDF uploads only</div><div class="settings-desc">Reject non-PDF file formats</div></div><label class="toggle"><input type="checkbox" checked onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="settings-group">
+          <div class="settings-group-header"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent3)"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span class="settings-group-title">Notifications</span></div>
+          <div class="settings-row"><div><div class="settings-label">Email on new submission</div><div class="settings-desc">Notify admin when a resume is received</div></div><label class="toggle"><input type="checkbox" checked onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Weekly digest</div><div class="settings-desc">Summary email every Monday</div></div><label class="toggle"><input type="checkbox" onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Slack integration</div><div class="settings-desc">Push alerts to a Slack channel</div></div><label class="toggle"><input type="checkbox" onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Score threshold alerts</div><div class="settings-desc">Alert when resume scores below 60</div></div><label class="toggle"><input type="checkbox" checked onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="settings-group">
+          <div class="settings-group-header"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><span class="settings-group-title">Security</span></div>
+          <div class="settings-row"><div><div class="settings-label">Two-factor authentication</div><div class="settings-desc">Require 2FA for all admin logins</div></div><label class="toggle"><input type="checkbox" onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">SSO only login</div><div class="settings-desc">Disable password-based sign-in</div></div><label class="toggle"><input type="checkbox" onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Audit log</div><div class="settings-desc">Track all admin actions</div></div><label class="toggle"><input type="checkbox" checked onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">IP allowlist</div><div class="settings-desc">Restrict admin access by IP</div></div><label class="toggle"><input type="checkbox" onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="settings-group">
+          <div class="settings-group-header"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#A78BFA"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span class="settings-group-title">Platform</span></div>
+          <div class="settings-row"><div><div class="settings-label">Maintenance mode</div><div class="settings-desc">Take platform offline for updates</div></div><label class="toggle"><input type="checkbox" onchange="showToast('Maintenance mode toggled','error')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Public registration</div><div class="settings-desc">Allow anyone to sign up</div></div><label class="toggle"><input type="checkbox" checked onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Usage analytics</div><div class="settings-desc">Collect anonymized usage data</div></div><label class="toggle"><input type="checkbox" checked onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+          <div class="settings-row"><div><div class="settings-label">Dark theme enforced</div><div class="settings-desc">Disable light mode for all users</div></div><label class="toggle"><input type="checkbox" onchange="showToast('Saved','success')"><span class="toggle-slider"></span></label></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+    const card = document.getElementById('auth-card');
+    if (tab === 'admin') {
+      card.classList.add('admin-mode');
+      document.getElementById('auth-title').textContent = 'Admin Access';
+    } else {
+      card.classList.remove('admin-mode');
+      document.getElementById('auth-title').textContent = 'Welcome';
+    }
+  }
+
+  let pwdVisible = false;
+  function togglePwd() {
+    pwdVisible = !pwdVisible;
+    document.getElementById('password-input').type = pwdVisible ? 'text' : 'password';
+    document.getElementById('eye-icon').innerHTML = pwdVisible
+      ? `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`
+      : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+  }
+  let signupPwdVisible = false;
+  function toggleSignupPwd() {
+    signupPwdVisible = !signupPwdVisible;
+    document.getElementById('signup-password').type = signupPwdVisible ? 'text' : 'password';
+    document.getElementById('eye-icon-signup').innerHTML = signupPwdVisible
+      ? `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`
+      : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+  }
+  let adminPwdVisible = false;
+  function toggleAdminPwd() {
+    adminPwdVisible = !adminPwdVisible;
+    document.getElementById('admin-password').type = adminPwdVisible ? 'text' : 'password';
+    document.getElementById('eye-icon-admin').innerHTML = adminPwdVisible
+      ? `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`
+      : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+  }
+
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show ' + type;
+    setTimeout(() => { t.className = ''; }, 3000);
+  }
+
+  function socialLogin(provider) {
+    showToast(`Redirecting to ${provider}…`, 'success');
+  }
+
+  function handleEmailLogin() {
+    const email = document.getElementById('email-input').value.trim();
+    const pwd   = document.getElementById('password-input').value;
+    if (!email || !/\S+@\S+\.\S+/.test(email)) { showToast('Please enter a valid email.', 'error'); return; }
+    if (!pwd || pwd.length < 6) { showToast('Password must be at least 6 characters.', 'error'); return; }
+    showToast('Signing you in…', 'success');
+  }
+
+  function handleSignUp() {
+    const name  = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const pwd   = document.getElementById('signup-password').value;
+    if (!name) { showToast('Please enter your full name.', 'error'); return; }
+    if (!email || !/\S+@\S+\.\S+/.test(email)) { showToast('Please enter a valid email.', 'error'); return; }
+    if (!pwd || pwd.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+    showToast('Account created! Welcome aboard 🎉', 'success');
+  }
+
+  function handleAdminLogin() {
+    const email = document.getElementById('admin-email').value.trim();
+    const pwd   = document.getElementById('admin-password').value;
+    const key   = document.getElementById('admin-key').value.trim();
+    if (!email || !/\S+@\S+\.\S+/.test(email)) { showToast('Please enter a valid admin email.', 'error'); return; }
+    if (!pwd || pwd.length < 6) { showToast('Password must be at least 6 characters.', 'error'); return; }
+    if (!key) { showToast('Please enter your access key.', 'error'); return; }
+    showToast('Verifying admin credentials…', 'admin');
+    const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    setTimeout(() => showAdminPanel(name), 900);
+  }
+
+  function showAdminPanel(name) {
+    document.getElementById('auth-page').style.display = 'none';
+    document.getElementById('admin-page').style.display = 'block';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    document.getElementById('sidebar-avatar').textContent = initials;
+    document.getElementById('sidebar-name').textContent = name;
+    showSection('dashboard');
+  }
+
+  const sectionTitles = { dashboard: 'Dashboard', submissions: 'Resume Submissions', analytics: 'Analytics', users: 'User Management', settings: 'Settings' };
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('section-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${id}'`)) btn.classList.add('active');
+    });
+    document.getElementById('topbar-title').textContent = sectionTitles[id] || id;
+  }
+
+  function logout() {
+    document.getElementById('admin-page').style.display = 'none';
+    document.getElementById('auth-page').style.display = 'flex';
+    document.getElementById('admin-email').value = '';
+    document.getElementById('admin-password').value = '';
+    document.getElementById('admin-key').value = '';
+    switchTab('email');
+    showToast('Logged out successfully', '');
+  }
+
+  function filterUsers(query) {
+    document.querySelectorAll('#users-table tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
+    });
+  }
+</script>
+</body>
+</html>
