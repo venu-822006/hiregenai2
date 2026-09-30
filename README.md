@@ -2,19 +2,19 @@ HireGenAI
 An AI-powered backend system for intelligent hiring workflows — including resume parsing, authentication, and scalable API services.
 
 Features
-User Authentication (JWT + bcrypt)
+-User Authentication (JWT + bcrypt)
 
-Resume Parsing (PDF & DOCX support)
+-Resume Parsing (PDF & DOCX support)
 
-Rate Limiting (Flask-Limiter)
+-Rate Limiting (Flask-Limiter)
 
-Modular Backend Architecture
+-Modular Backend Architecture
 
-Async Tasks with Celery
+-Async Tasks with Celery
 
-MongoDB Integration
+-MongoDB Integration
 
-RESTful API Design
+-RESTful API Design
 
 Project Structure
 Plaintext
